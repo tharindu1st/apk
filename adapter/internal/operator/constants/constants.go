@@ -38,14 +38,14 @@ const (
 
 // CR Statuses
 const (
-	ValidatedState = "Validated"
-	InvalidState   = "Invalid"
-	DeployedState  = "Deployed"
-	UpdatedState   = "Updated"
+	DeployedState = "Deployed"
+	UpdatedState  = "Updated"
 )
 
 // CRD Kinds
 const (
 	KindAuthentication = "Authentication"
-	KindHTTPRoute      = "HttpRoute"
+	KindHTTPRoute      = "HTTPRoute"
+	//TODO(amali) remove this after fixing the issue in https://github.com/wso2/apk/issues/383
+	KindResource = "Resource"
 )
