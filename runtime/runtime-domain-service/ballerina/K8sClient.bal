@@ -251,7 +251,7 @@ isolated function getBackendServicesForAPI(string apiName, string apiVersion, st
 }
 
 public isolated function getHttproutesForAPIS(string apiName, string apiVersion, string namespace) returns model:HttprouteList|http:ClientError|error {
-    string endpoint = "/apis/gateway.networking.k8s.io/v1beta1/namespaces/" + namespace + "/httproutes/?labelSelector=" + check generateUrlEncodedLabelSelector(apiName, apiVersion);
+    string endpoint = "/apis/gateway.networking.k8s.io/v1beta1/namespaces/" + namespace + "/httproutes?labelSelector=" + check generateUrlEncodedLabelSelector(apiName, apiVersion);
     return k8sApiServerEp->get(endpoint, targetType = model:HttprouteList);
 }
 

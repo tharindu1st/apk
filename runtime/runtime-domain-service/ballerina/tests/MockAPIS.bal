@@ -18,6 +18,57 @@
 import ballerina/http;
 import runtime_domain_service.model;
 
+function getHttpRouteListForDeletion() returns model:HttprouteList{
+    model:HttprouteList httpRouteList = {metadata: {},
+    items: [{apiVersion: "dp.wso2.com/v1alpha1", kind: "HTTPRoute", metadata: {name:"01ed7aca-eb6b-1178-a200-f604a4ce114a-production", namespace:"apk-platform"}, spec:{rules: []}}]};
+    return httpRouteList;
+}
+function getMockDeleteAPI() returns model:API {
+    model:API api = {
+        "apiVersion": "dp.wso2.com/v1alpha1",
+        "kind": "API",
+        "metadata": {
+            "creationTimestamp": "2022-12-13T09:45:47Z",
+            "generation": 1,
+            "managedFields": [
+                {
+                    "apiVersion": "dp.wso2.com/v1alpha1",
+                    "fieldsType": "FieldsV1",
+                    "fieldsV1": {
+                        "f:spec": {
+                            ".": {},
+                            "f:apiDisplayName": {},
+                            "f:apiType": {},
+                            "f:apiVersion": {},
+                            "f:context": {},
+                            "f:definitionFileRef": {},
+                            "f:prodHTTPRouteRef": {}
+                        }
+                    },
+                    "manager": "ballerina",
+                    "operation": "Update",
+                    "time": "2022-12-13T09:45:47Z"
+                }
+            ],
+            "name": "01ed7aca-eb6b-1178-a200-f604a4ce114a",
+            "namespace": "apk-platform",
+            "resourceVersion": "5833",
+            "selfLink": "/apis/dp.wso2.com/v1alpha1/namespaces/apk-platform/apis/01ed7aca-eb6b-1178-a200-f604a4ce114a",
+            "uid": "c5ab2423-b9e8-432b-92e8-35e6907ed5e8"
+        },
+        "spec": {
+            "apiDisplayName": "pizzashackAPI",
+            "apiType": "REST",
+            "apiVersion": "1.0.0",
+            "context": "/pizzashack/1.0.0",
+            "organization": "01ed7aca-eb6b-1178-a200-f604a4ce114b",
+            "definitionFileRef": "01ed7aca-eb6b-1178-a200-f604a4ce114a-definition",
+            "prodHTTPRouteRef": "01ed7aca-eb6b-1178-a200-f604a4ce114a-production"
+        }
+    };
+    return api;
+}
+
 public function getMockAPIList() returns model:APIList {
 
     model:APIList response = {

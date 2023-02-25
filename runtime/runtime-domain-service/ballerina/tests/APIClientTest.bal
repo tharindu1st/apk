@@ -225,7 +225,7 @@ function getMockK8sClient() returns http:Client {
     test:prepare(mockK8sClient).when("get").withArguments("/apis/dp.wso2.com/v1alpha1/namespaces/apk-platform/apis/01ed7b08-f2b1-1166-82d5-649ae706d29e").thenReturn(mock404Response());
     test:prepare(mockK8sClient).when("get").withArguments("/apis/dp.wso2.com/v1alpha1/namespaces/apk/apis/pizzashackAPI1").thenReturn(mock404Response());
     test:prepare(mockK8sClient).when("get").withArguments("/api/v1/namespaces/apk-platform/configmaps/01ed7aca-eb6b-1178-a200-f604a4ce114a-definition").thenReturn(mockConfigMaps());
-    test:prepare(mockK8sClient).when("get").withArguments("/apis/dp.wso2.com/v1alpha1/namespaces/apk-platform/runtimeapis/01ed7aca-eb6b-1178-a200-f604a4ce114a").thenReturn(getMockInternalAPI());
+    test:prepare(mockK8sClient).when("get").withArguments("/apis/dp.wso2.com/v1alpha1/namespaces/apk-platform/runtimeapis/01ed7b08-f2b1-1166-82d5-649ae706d29d").thenReturn(getMockInternalAPI());
     http:ClientError clientError = error("Backend Failure");
     test:prepare(mockK8sClient).when("get").withArguments("/api/v1/namespaces/apk-platform/configmaps/01ed7b08-f2b1-1166-82d5-649ae706d29d-definition").thenReturn(mock404ConfigMap());
     test:prepare(mockK8sClient).when("get").withArguments("/api/v1/namespaces/apk-platform/configmaps/01ed7aca-eb6b-1178-a200-f604a4ce114b-definition").thenReturn(clientError);
@@ -361,19 +361,6 @@ function apiNameDataProvider() returns map<[string, string, model:API & readonly
     return dataSet;
 }
 
-@test:Config {dataProvider: apiIDDataprovider}
-public function testGetAPIById(string id, commons:Organization organization, model:API & readonly|error expected) returns error? {
-    test:assertEquals(getAPI(id, organization), check expected);
-}
-
-function apiIDDataprovider() returns map<[string, commons:Organization, model:API & readonly|error]>|error {
-
-    map<[string, commons:Organization, model:API & readonly|error]> dataSet = {
-        "1": ["c5ab2423-b9e8-432b-92e8-35e6907ed5e8", organiztion1, getMockPizzaShakK8sAPI()]
-    };
-    return dataSet;
-}
-
 @test:Config {dataProvider: prefixMatchDataProvider}
 public function testGeneratePrefixMatch(API api, model:Endpoint endpoint, APIOperations apiOperation, string expected) {
     APIClient apiclient = new ();
@@ -433,9 +420,9 @@ public function testgetApiById(string apiid, commons:Organization organization, 
 
 public function apiByIdDataProvider() returns map<[string, commons:Organization, API|NotFoundError]> {
     API & readonly api1 = {
-        id: "c5ab2423-b9e8-432b-92e8-35e6907ed5e8",
-        name: "pizzashackAPI",
-        context: "/pizzashack/1.0.0",
+        id: "7b7db1f0-0a9a-4f72-9f9d-5a1696d590c1",
+        name: "pizzashackAPI1",
+        context: "/pizzashack1/1.0.0",
         'version: "1.0.0",
         'type: "REST",
         endpointConfig: {"endpoint_type": "http", "sandbox_endpoints": {"url": "https://pizzashack-service:8080/am/sample/pizzashack/v3/api/"}, "production_endpoints": {"url": "https://pizzashack-service:8080/am/sample/pizzashack/v3/api/"}},
@@ -445,11 +432,11 @@ public function apiByIdDataProvider() returns map<[string, commons:Organization,
             {"target": "/*", "verb": "POST", "authTypeEnabled": true, "scopes": []},
             {"target": "/*", "verb": "DELETE", "authTypeEnabled": true, "scopes": []}
         ],
-        createdTime: "2022-12-13T09:45:47Z"
+        createdTime: "2022-12-13T17:09:49Z"
     };
     NotFoundError notfound = {body: {code: 909100, message: "c5ab2423-b9e8-432b-92e8-35e6907ed5e9 not found."}};
     map<[string, commons:Organization, API & readonly|NotFoundError]> dataset = {
-        "1": ["c5ab2423-b9e8-432b-92e8-35e6907ed5e8", organiztion1, api1],
+        "1": ["7b7db1f0-0a9a-4f72-9f9d-5a1696d590c1", organiztion1, api1],
         "2": ["c5ab2423-b9e8-432b-92e8-35e6907ed5e9", organiztion1, notfound]
     };
     return dataset;
@@ -2217,7 +2204,7 @@ function testCreateAPI(string apiUUID, string backenduuid, API api, model:Config
         test:prepare(k8sApiServerEp).when("post").withArguments("/apis/dp.wso2.com/v1alpha1/namespaces/apk-platform/apis", k8sApi).thenReturn(k8sapiResponse);
         test:prepare(k8sApiServerEp).when("post").withArguments("/apis/dp.wso2.com/v1alpha1/namespaces/apk-platform/runtimeapis", runtimeAPI).thenReturn(runtimeAPIResponse);
         test:prepare(k8sApiServerEp).when("get").withArguments("/api/v1/namespaces/apk-platform/configmaps/" + apiClient.retrieveDefinitionName(apiUUID)).thenReturn(configmapResponse);
-        test:prepare(k8sApiServerEp).when("get").withArguments("/apis/gateway.networking.k8s.io/v1beta1/namespaces/apk-platform/httproutes/?labelSelector=" + check generateUrlEncodedLabelSelector(api.name, api.'version)).thenReturn(httpRouteList);
+        test:prepare(k8sApiServerEp).when("get").withArguments("/apis/gateway.networking.k8s.io/v1beta1/namespaces/apk-platform/httproutes?labelSelector=" + check generateUrlEncodedLabelSelector(api.name, api.'version)).thenReturn(httpRouteList);
         test:prepare(k8sApiServerEp).when("get").withArguments("/apis/dp.wso2.com/v1alpha1/namespaces/apk-platform/servicemappings?labelSelector=" + check generateUrlEncodedLabelSelector(api.name, api.'version)).thenReturn(serviceMappingList);
         test:prepare(k8sApiServerEp).when("get").withArguments("/apis/dp.wso2.com/v1alpha1/namespaces/apk-platform/authentications?labelSelector=" + check generateUrlEncodedLabelSelector(api.name, api.'version)).thenReturn(authenticationList);
         test:prepare(k8sApiServerEp).when("get").withArguments("/apis/dp.wso2.com/v1alpha1/namespaces/apk-platform/backendpolicies?labelSelector=" + check generateUrlEncodedLabelSelector(api.name, api.'version)).thenReturn(backendPolicyList);
@@ -2775,6 +2762,196 @@ function createAPIDataProvider() returns map<[string, string, API, model:ConfigM
             getMockRuntimeAPIResponse(getMockRuntimeAPI(api, apiUUID, organiztion1, ())),
             k8sapiUUID,
             invalidAPINameError.toBalString()
+        ]
+    };
+    return data;
+}
+
+@test:Config {dataProvider: apiiDDeletionData}
+function testDeleteAPIByID(string apiId, model:API api, commons:Organization organization,
+        [string, http:Response|http:ClientError] apiDeletionResponse,
+        [string, http:Response|http:ClientError] configMapDeletionResponse,
+        model:HttprouteList|http:ClientError httpRouteListResponse,
+        [string, http:Response|http:ClientError][] httpRouteDeletionResponses,
+        model:ServiceMappingList|http:ClientError serviceMappingListResponse,
+        [string, http:Response|http:ClientError][] serviceMappingDeletionResponses,
+        model:AuthenticationList|http:ClientError|error authenticationCrListResponse,
+        [string, http:Response|http:ClientError][] authenticationCRDeletionResponses,
+        model:BackendPolicyList|http:ClientError|error backendPolicyListResponse,
+        [string, http:Response|http:ClientError][] backendPolicyDeleteResponses,
+        model:ServiceList|http:ClientError|error serviceListResponse,
+        [string, http:Response|http:ClientError][] serviceDeletionResponses,
+        model:RuntimeAPI|http:ClientError internalAPIResponse,
+        [string, http:Response|http:ClientError] internalAPIDeletionResponse,
+        http:Ok|ForbiddenError|InternalServerErrorError|NotFoundError|commons:APKError expected) returns error? {
+    APIClient apiClient = new ();
+    test:prepare(k8sApiServerEp).when("delete").withArguments("/apis/dp.wso2.com/v1alpha1/namespaces/apk-platform/apis/" + apiDeletionResponse[0]).thenReturn(apiDeletionResponse[1]);
+    test:prepare(k8sApiServerEp).when("delete").withArguments("/api/v1/namespaces/apk-platform/configmaps/" + configMapDeletionResponse[0]).thenReturn(configMapDeletionResponse[1]);
+    test:prepare(k8sApiServerEp).when("get").withArguments("/apis/gateway.networking.k8s.io/v1beta1/namespaces/apk-platform/httproutes?labelSelector=" + check generateUrlEncodedLabelSelector(api.spec.apiDisplayName, api.spec.apiVersion)).thenReturn(httpRouteListResponse);
+    foreach [string, http:Response|http:ClientError] item in httpRouteDeletionResponses {
+        test:prepare(k8sApiServerEp).when("delete").withArguments("/apis/gateway.networking.k8s.io/v1beta1/namespaces/apk-platform/httproutes/" + item[0]).thenReturn(item[1]);
+    }
+    test:prepare(k8sApiServerEp).when("get").withArguments("/apis/dp.wso2.com/v1alpha1/namespaces/apk-platform/servicemappings?labelSelector=" + check generateUrlEncodedLabelSelector(api.spec.apiDisplayName, api.spec.apiVersion)).thenReturn(serviceMappingListResponse);
+    foreach [string, http:Response|http:ClientError] item in serviceMappingDeletionResponses {
+        test:prepare(k8sApiServerEp).when("delete").withArguments("/apis/dp.wso2.com/v1alpha1/namespaces/apk-platform/servicemappings/" + item[0]).thenReturn(item[1]);
+    }
+    test:prepare(k8sApiServerEp).when("get").withArguments("/apis/dp.wso2.com/v1alpha1/namespaces/apk-platform/authentications?labelSelector=" + check generateUrlEncodedLabelSelector(api.spec.apiDisplayName, api.spec.apiVersion)).thenReturn(authenticationCrListResponse);
+    foreach [string, http:Response|http:ClientError] item in authenticationCRDeletionResponses {
+        test:prepare(k8sApiServerEp).when("delete").withArguments("/apis/dp.wso2.com/v1alpha1/namespaces/apk-platform/authentications/" + item[0]).thenReturn(item[1]);
+    }
+    test:prepare(k8sApiServerEp).when("get").withArguments("/apis/dp.wso2.com/v1alpha1/namespaces/apk-platform/backendpolicies?labelSelector=" + check generateUrlEncodedLabelSelector(api.spec.apiDisplayName, api.spec.apiVersion)).thenReturn(backendPolicyListResponse);
+    foreach [string, http:Response|http:ClientError] item in backendPolicyDeleteResponses {
+        test:prepare(k8sApiServerEp).when("delete").withArguments("/apis/dp.wso2.com/v1alpha1/namespaces/apk-platform/backendpolicies/" + item[0]).thenReturn(item[1]);
+    }
+    test:prepare(k8sApiServerEp).when("get").withArguments("/api/v1/namespaces/apk-platform/services?labelSelector=" + check generateUrlEncodedLabelSelector(api.spec.apiDisplayName, api.spec.apiVersion)).thenReturn(serviceListResponse);
+    foreach [string, http:Response|http:ClientError] item in serviceDeletionResponses {
+        test:prepare(k8sApiServerEp).when("delete").withArguments("/api/v1/namespaces/apk-platform/services/" + item[0]).thenReturn(item[1]);
+    }
+    test:prepare(k8sApiServerEp).when("get").withArguments("/apis/dp.wso2.com/v1alpha1/namespaces/apk-platform/runtimeapis/" + apiDeletionResponse[0]).thenReturn(internalAPIResponse);
+    test:prepare(k8sApiServerEp).when("delete").withArguments("/apis/dp.wso2.com/v1alpha1/namespaces/apk-platform/runtimeapis/" + internalAPIDeletionResponse[0]).thenReturn(internalAPIDeletionResponse[1]);
+    http:Ok|ForbiddenError|NotFoundError|InternalServerErrorError|commons:APKError actual = apiClient.deleteAPIById(apiId, organization);
+    if actual is http:Ok|ForbiddenError|InternalServerErrorError|NotFoundError {
+        if expected is http:Ok|ForbiddenError|InternalServerErrorError|NotFoundError {
+            test:assertEquals(actual.toBalString(), expected.toBalString());
+        } else {
+            test:assertFail(msg = "Unexpected error type");
+        }
+    } else {
+        if actual is commons:APKError && expected is commons:APKError {
+            commons:ErrorHandler actualErrorHandler = actual.detail();
+            commons:ErrorHandler expctedErrorHandler = expected.detail();
+            test:assertEquals(actualErrorHandler.toBalString(), expctedErrorHandler.toBalString());
+        } else {
+            test:assertFail(msg = "Unexpected error type");
+        }
+    }
+}
+
+function apiiDDeletionData() returns map<[string, model:API, commons:Organization, [string, http:Response|http:ClientError], [string, http:Response|http:ClientError], model:HttprouteList|http:ClientError,
+[string, http:Response|http:ClientError][], model:ServiceMappingList|http:ClientError, [string, http:Response|http:ClientError][],
+model:AuthenticationList|http:ClientError|error, [string, http:Response|http:ClientError][], model:BackendPolicyList|http:ClientError|error,
+[string, http:Response|http:ClientError][], model:ServiceList|http:ClientError|error, [string, http:Response|http:ClientError][],
+model:RuntimeAPI|http:ClientError, [string, http:Response|http:ClientError], http:Ok|ForbiddenError|InternalServerErrorError|NotFoundError|commons:APKError]> {
+    model:ServiceMappingList serviceMapList = {metadata: {}, items: []};
+    model:AuthenticationList authList = {metadata: {}, items: []};
+    model:BackendPolicyList backendPolicyList = {metadata: {}, items: []};
+    model:ServiceList serviceList = {metadata: {}, items: []};
+    model:RuntimeAPI runtimeAPI = {metadata: {name: "runtimeAPI", namespace: ""}, spec: {name: "pizzashackAPI", context: "/pizzashack/1.0.0", 'type: "REST", 'version: "1.0.0"}};
+    http:Response okResponse = new;
+    okResponse.statusCode = 200;
+    NotFoundError apiNotfound = {body: {code: 900910, description: "API with c5ab2423-b9e8-432b-92e8-35e6907ed5f8 not found", message: "API not found"}};
+    NotFoundError apiNotfound2 = {body: {code: 900910, description: "API with c5ab2423-b9e8-432b-92e8-35e6907ed5e8 not found", message: "API not found"}};
+    http:ClientAuthError clientAuthError = error("Client auth error");
+    model:Status status = {code: 410, message: "Invalid Token"};
+    http:Response apiDeletionErrorResponse = new;
+    apiDeletionErrorResponse.statusCode = 410;
+    apiDeletionErrorResponse.setJsonPayload(status.toJson());
+    commons:APKError apkError = error("Internal Server Error", code = 900900, message = "Internal Server Error", statusCode = 500, description = "Internal Server Error");
+    map<[string, model:API, commons:Organization, [string, http:Response|http:ClientError], [string, http:Response|http:ClientError], model:HttprouteList|http:ClientError,
+[string, http:Response|http:ClientError][], model:ServiceMappingList|http:ClientError, [string, http:Response|http:ClientError][],
+model:AuthenticationList|http:ClientError|error, [string, http:Response|http:ClientError][], model:BackendPolicyList|http:ClientError|error,
+[string, http:Response|http:ClientError][], model:ServiceList|http:ClientError|error, [string, http:Response|http:ClientError][],
+model:RuntimeAPI|http:ClientError, [string, http:Response|http:ClientError], http:Ok|ForbiddenError|InternalServerErrorError|NotFoundError|commons:APKError]>
+data = {
+        "1": [
+            "c5ab2423-b9e8-432b-92e8-35e6907ed5e8",
+            getMockDeleteAPI(),
+            organiztion1,
+            ["01ed7aca-eb6b-1178-a200-f604a4ce114a", okResponse],
+            ["01ed7aca-eb6b-1178-a200-f604a4ce114a-definition", okResponse],
+            getHttpRouteListForDeletion(),
+            [["01ed7aca-eb6b-1178-a200-f604a4ce114a-production", okResponse]],
+            serviceMapList,
+            [],
+            authList,
+            [],
+            backendPolicyList,
+            [],
+            serviceList,
+            [],
+            runtimeAPI,
+            ["01ed7aca-eb6b-1178-a200-f604a4ce114a", okResponse],
+            http:OK
+        ],
+        "2": [
+            "c5ab2423-b9e8-432b-92e8-35e6907ed5f8",
+            getMockDeleteAPI(),
+            organiztion1,
+            ["01ed7aca-eb6b-1178-a200-f604a4ce114a", okResponse],
+            ["01ed7aca-eb6b-1178-a200-f604a4ce114a-definition", okResponse],
+            getHttpRouteListForDeletion(),
+            [["01ed7aca-eb6b-1178-a200-f604a4ce114a-production", okResponse]],
+            serviceMapList,
+            [],
+            authList,
+            [],
+            backendPolicyList,
+            [],
+            serviceList,
+            [],
+            runtimeAPI,
+            ["01ed7aca-eb6b-1178-a200-f604a4ce114a", okResponse],
+            apiNotfound
+        ],
+        "3": [
+            "c5ab2423-b9e8-432b-92e8-35e6907ed5e8",
+            getMockDeleteAPI(),
+            organiztion2,
+            ["01ed7aca-eb6b-1178-a200-f604a4ce114a", okResponse],
+            ["01ed7aca-eb6b-1178-a200-f604a4ce114a-definition", okResponse],
+            getHttpRouteListForDeletion(),
+            [["01ed7aca-eb6b-1178-a200-f604a4ce114a-production", okResponse]],
+            serviceMapList,
+            [],
+            authList,
+            [],
+            backendPolicyList,
+            [],
+            serviceList,
+            [],
+            runtimeAPI,
+            ["01ed7aca-eb6b-1178-a200-f604a4ce114a", okResponse],
+            apiNotfound2
+        ],
+        "4": [
+            "c5ab2423-b9e8-432b-92e8-35e6907ed5e8",
+            getMockDeleteAPI(),
+            organiztion1,
+            ["01ed7aca-eb6b-1178-a200-f604a4ce114a", clientAuthError],
+            ["01ed7aca-eb6b-1178-a200-f604a4ce114a-definition", okResponse],
+            getHttpRouteListForDeletion(),
+            [["01ed7aca-eb6b-1178-a200-f604a4ce114a-production", okResponse]],
+            serviceMapList,
+            [],
+            authList,
+            [],
+            backendPolicyList,
+            [],
+            serviceList,
+            [],
+            runtimeAPI,
+            ["01ed7aca-eb6b-1178-a200-f604a4ce114a", okResponse],
+            apkError
+        ],
+        "5": [
+            "c5ab2423-b9e8-432b-92e8-35e6907ed5e8",
+            getMockDeleteAPI(),
+            organiztion1,
+            ["01ed7aca-eb6b-1178-a200-f604a4ce114a", apiDeletionErrorResponse],
+            ["01ed7aca-eb6b-1178-a200-f604a4ce114a-definition", okResponse],
+            getHttpRouteListForDeletion(),
+            [["01ed7aca-eb6b-1178-a200-f604a4ce114a-production", okResponse]],
+            serviceMapList,
+            [],
+            authList,
+            [],
+            backendPolicyList,
+            [],
+            serviceList,
+            [],
+            runtimeAPI,
+            ["01ed7aca-eb6b-1178-a200-f604a4ce114a", okResponse],
+            apkError
         ]
     };
     return data;

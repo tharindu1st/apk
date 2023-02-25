@@ -38,7 +38,7 @@ import wso2/apk_common_lib as commons;
 public class APIClient {
 
     public isolated function getAPIDefinitionByID(string id, commons:Organization organization) returns http:Response|NotFoundError|PreconditionFailedError|InternalServerErrorError {
-        model:API|error api = getAPI(id, organization);
+        model:API? api = getAPI(id, organization);
         if api is model:API {
             json|error definition = self.getDefinition(api);
             if definition is json {
@@ -117,20 +117,28 @@ public class APIClient {
 
     //Delete APIs deployed in a namespace by APIId.
     public isolated function deleteAPIById(string id, commons:Organization organization) returns http:Ok|ForbiddenError|NotFoundError|InternalServerErrorError|commons:APKError {
-        boolean APIIDAvailable = id.length() > 0 ? true : false;
-        if (APIIDAvailable && string:length(id.toString()) > 0)
-        {
-            model:API|error api = getAPI(id, organization);
+        do {
+            model:API? api = getAPI(id, organization);
             if api is model:API {
-                http:Response|http:ClientError apiCRDeletionResponse = deleteAPICR(api.metadata.name, api.metadata.namespace);
-                if apiCRDeletionResponse is http:ClientError {
-                    log:printError("Error while undeploying API CR ", apiCRDeletionResponse);
+                http:Response apiCRDeletionResponse = check deleteAPICR(api.metadata.name, api.metadata.namespace);
+                if apiCRDeletionResponse.statusCode != http:STATUS_OK {
+                    json responsePayLoad = check apiCRDeletionResponse.getJsonPayload();
+                    model:Status statusResponse = check responsePayLoad.cloneWithType(model:Status);
+                    check self.handleK8sTimeout(statusResponse);
                 }
                 string? definitionFileRef = api.spec.definitionFileRef;
                 if definitionFileRef is string {
                     http:Response|http:ClientError apiDefinitionDeletionResponse = deleteConfigMap(definitionFileRef, api.metadata.namespace);
                     if apiDefinitionDeletionResponse is http:ClientError {
                         log:printError("Error while undeploying API definition ", apiDefinitionDeletionResponse);
+                    } else {
+                        if apiDefinitionDeletionResponse.statusCode == http:STATUS_OK {
+                            log:printInfo("API Definition deleted successfully", apiDefinition = api.spec.definitionFileRef);
+                        } else {
+                            json responsePayLoad = check apiCRDeletionResponse.getJsonPayload();
+                            model:Status statusResponse = check responsePayLoad.cloneWithType(model:Status);
+                            check self.handleK8sTimeout(statusResponse);
+                        }
                     }
                 }
                 _ = check self.deleteHttpRoutes(api);
@@ -143,10 +151,13 @@ public class APIClient {
                 NotFoundError apiNotfound = {body: {code: 900910, description: "API with " + id + " not found", message: "API not found"}};
                 return apiNotfound;
             }
+            return http:OK;
+        } on fail var e {
+            commons:APKError apkError= error("Internal Server Error",e, code = 900900, message = "Internal Server Error", statusCode = 500, description = "Internal Server Error");
+            return apkError;
         }
-        return http:OK;
     }
-    private isolated function deleteHttpRoutes(model:API api) returns commons:APKError? {
+isolated function deleteHttpRoutes(model:API api) returns commons:APKError? {
         do {
             model:HttprouteList|http:ClientError httpRouteListResponse = check getHttproutesForAPIS(api.spec.apiDisplayName, api.spec.apiVersion, api.metadata.namespace);
             if httpRouteListResponse is model:HttprouteList {
@@ -178,6 +189,8 @@ public class APIClient {
                     json responsePayLoad = check internalAPIDeletionResponse.getJsonPayload();
                     model:Status statusResponse = check responsePayLoad.cloneWithType(model:Status);
                     check self.handleK8sTimeout(statusResponse);
+                } else {
+                    log:printDebug("Internal API deleted successfully", k8sAPIName = k8sAPIName);
                 }
             }
         } on fail var e {
@@ -1193,7 +1206,7 @@ public class APIClient {
     }
 
     public isolated function generateAPIKey(string apiId, commons:Organization organization) returns APIKey|BadRequestError|NotFoundError|InternalServerErrorError {
-        model:API|error api = getAPI(apiId, organization);
+        model:API? api = getAPI(apiId, organization);
         if api is model:API {
             InternalTokenGenerator tokenGenerator = new ();
             string|jwt:Error generatedToken = tokenGenerator.generateToken(api, APK_USER);
@@ -1276,7 +1289,7 @@ public class APIClient {
 
     isolated function deleteServiceMappings(model:API api) returns commons:APKError? {
         do {
-            map<model:K8sServiceMapping> retrieveServiceMappingsForAPIResult = retrieveServiceMappingsForAPI(api).clone();
+            map<model:K8sServiceMapping> retrieveServiceMappingsForAPIResult = {};
             model:ServiceMappingList|http:ClientError k8sServiceMapingsDeletionResponse = check getK8sServiceMapingsForAPI(api.spec.apiDisplayName, api.spec.apiVersion, api.metadata.namespace);
             if k8sServiceMapingsDeletionResponse is model:ServiceMappingList {
                 foreach model:K8sServiceMapping item in k8sServiceMapingsDeletionResponse.items {
@@ -1285,9 +1298,7 @@ public class APIClient {
             } else {
                 log:printError("Error occured while deleting service mapping");
             }
-            string[] keys = retrieveServiceMappingsForAPIResult.keys();
-            foreach string key in keys {
-                model:K8sServiceMapping serviceMapping = retrieveServiceMappingsForAPIResult.get(key);
+            foreach model:K8sServiceMapping serviceMapping in retrieveServiceMappingsForAPIResult {
                 http:Response|http:ClientError k8ServiceMappingDeletionResponse = deleteK8ServiceMapping(serviceMapping.metadata.name, serviceMapping.metadata.namespace);
                 if k8ServiceMappingDeletionResponse is http:Response {
                     if k8ServiceMappingDeletionResponse.statusCode != http:STATUS_OK {
@@ -2054,7 +2065,10 @@ public class APIClient {
     }
 
     private isolated function getApiArtifact(API api, commons:Organization organization) returns model:APIArtifact|error {
-        model:API k8sapi = check getAPI(<string>api.id, organization);
+        model:API? k8sapi = getAPI(<string>api.id, organization);
+        if k8sapi is () {
+            return error("API not found", message = "API not found for id: " + <string>api.id);
+        }
         model:APIArtifact apiArtifact = {uniqueId: k8sapi.metadata.name};
         // retrieveConfigmap
         string? definitionFileRef = k8sapi.spec.definitionFileRef;
