@@ -32,6 +32,7 @@ import (
 	"github.com/wso2/apk/adapter/config"
 	logger "github.com/wso2/apk/adapter/internal/loggers"
 	"github.com/wso2/apk/adapter/internal/logging"
+	"github.com/wso2/apk/adapter/internal/oasparser/constants"
 	"github.com/wso2/apk/adapter/internal/oasparser/envoyconf"
 	envoy "github.com/wso2/apk/adapter/internal/oasparser/envoyconf"
 	"github.com/wso2/apk/adapter/internal/oasparser/model"
@@ -463,6 +464,11 @@ func GetJWTRequirements(adapterAPI *model.AdapterInternalAPI, jwtIssuers map[str
 			selectedIssuers = append(selectedIssuers, issuserName)
 		}
 	}
+	if adapterAPI.GetAPIType() == constants.GRAPHQL || adapterAPI.GetAPIType() == constants.GRPC {
+		return &jwt.JwtRequirement{
+			RequiresType: &jwt.JwtRequirement_AllowMissingOrFailed{},
+		}
+	}
 	if len(selectedIssuers) == 1 {
 		return &jwt.JwtRequirement{
 			RequiresType: &jwt.JwtRequirement_ProviderName{
@@ -528,6 +534,7 @@ func getjwtAuthFilters(tokenIssuer *v1alpha1.ResolvedJWTIssuer, issuerName strin
 		Forward:                true,
 		FailedStatusInMetadata: "failed_status",
 		PayloadInMetadata:      "payload_in_metadata",
+		JwtCacheConfig:         &jwt.JwtCacheConfig{JwtCacheSize: 1000},
 	}
 	if tokenIssuer.SignatureValidation.JWKS != nil {
 		logger.LoggerOasparser.Infof("JWKS URL: %s", tokenIssuer.SignatureValidation.JWKS.URL)
